@@ -7,9 +7,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import StadiumDetails from './pages/StadiumDetails';
 import OwnerDashboard from './pages/OwnerDashboard';
+import OwnerStadiumDetails from './pages/OwnerStadiumDetails';
 import Reservations from './pages/Reservations';
 import Messages from './pages/Messages';
-import OwnerStadiumDetails from './pages/OwnerStadiumDetails';
 
 function App() {
   return (
@@ -22,18 +22,18 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/stadiums/:id" element={<StadiumDetails />} />
           <Route
-  path="/owner/stadiums/:stadiumId"
-  element={
-    <ProtectedRoute role="owner">
-      <OwnerStadiumDetails />
-    </ProtectedRoute>
-  }
-/>
-          <Route
             path="/owner"
             element={
               <ProtectedRoute role="owner">
                 <OwnerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/owner/stadiums/:stadiumId"
+            element={
+              <ProtectedRoute role="owner">
+                <OwnerStadiumDetails />
               </ProtectedRoute>
             }
           />
