@@ -1,3 +1,4 @@
+import React from 'react';
 import { useContext, useEffect, useState } from 'react';
 import SlotBadge from '../components/SlotBadge';
 import { AuthContext } from '../context/AuthContext';
