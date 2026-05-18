@@ -22,6 +22,14 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/stadiums/:id" element={<StadiumDetails />} />
           <Route
+  path="/owner/stadiums/:stadiumId"
+  element={
+    <ProtectedRoute role="owner">
+      <OwnerStadiumDetails />
+    </ProtectedRoute>
+  }
+/>
+          <Route
             path="/owner"
             element={
               <ProtectedRoute role="owner">
