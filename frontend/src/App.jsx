@@ -9,6 +9,7 @@ import StadiumDetails from './pages/StadiumDetails';
 import OwnerDashboard from './pages/OwnerDashboard';
 import Reservations from './pages/Reservations';
 import Messages from './pages/Messages';
+import OwnerStadiumDetails from './pages/OwnerStadiumDetails';
 
 function App() {
   return (
