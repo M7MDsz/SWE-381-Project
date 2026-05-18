@@ -1,16 +1,22 @@
 import React from 'react';
 import { useContext, useEffect, useState } from 'react';
-import SlotBadge from '../components/SlotBadge';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 function OwnerDashboard() {
   const { authFetch } = useContext(AuthContext);
+
   const [stadiums, setStadiums] = useState([]);
-  const [selectedStadium, setSelectedStadium] = useState('');
-  const [slots, setSlots] = useState([]);
   const [stats, setStats] = useState(null);
-  const [stadiumForm, setStadiumForm] = useState({ name: '', description: '', location: '', photos: '', facilities: '' });
-  const [slotForm, setSlotForm] = useState({ date: '', startTime: '', endTime: '' });
+  const [showModal, setShowModal] = useState(false);
+  const [stadiumForm, setStadiumForm] = useState({
+    name: '',
+    description: '',
+    location: '',
+    photos: '',
+    facilities: ''
+  });
+  const [slotCounts, setSlotCounts] = useState({});
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -18,22 +24,28 @@ function OwnerDashboard() {
     try {
       const ownerStadiums = await authFetch('/stadiums/mine');
       const ownerStats = await authFetch('/stadiums/stats');
+
       setStadiums(ownerStadiums);
       setStats(ownerStats);
-      if (ownerStadiums.length > 0 && !selectedStadium) {
-        setSelectedStadium(ownerStadiums[0]._id);
-      }
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
-  const loadSlots = async () => {
-    if (!selectedStadium) return;
-    try {
-      const data = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/stadiums/${selectedStadium}/slots`);
-      const slotData = await data.json();
-      setSlots(slotData);
+      const counts = {};
+
+      for (const stadium of ownerStadiums) {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/stadiums/${stadium._id}/slots`
+        );
+
+        const slotData = await response.json();
+
+        const total = Array.isArray(slotData) ? slotData.length : 0;
+        const available = Array.isArray(slotData)
+          ? slotData.filter((slot) => !slot.isReserved).length
+          : 0;
+
+        counts[stadium._id] = { total, available };
+      }
+
+      setSlotCounts(counts);
     } catch (err) {
       setError(err.message);
     }
@@ -43,47 +55,42 @@ function OwnerDashboard() {
     loadOwnerData();
   }, []);
 
-  useEffect(() => {
-    loadSlots();
-  }, [selectedStadium]);
-
   const handleStadiumChange = (e) => {
-    setStadiumForm({ ...stadiumForm, [e.target.name]: e.target.value });
-  };
-
-  const handleSlotChange = (e) => {
-    setSlotForm({ ...slotForm, [e.target.name]: e.target.value });
+    setStadiumForm({
+      ...stadiumForm,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleCreateStadium = async (e) => {
     e.preventDefault();
+
     try {
       await authFetch('/stadiums', {
         method: 'POST',
         body: JSON.stringify({
           ...stadiumForm,
-          photos: stadiumForm.photos.split(',').map((item) => item.trim()).filter(Boolean),
-          facilities: stadiumForm.facilities.split(',').map((item) => item.trim()).filter(Boolean)
+          photos: stadiumForm.photos
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+          facilities: stadiumForm.facilities
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
         })
       });
-      setStadiumForm({ name: '', description: '', location: '', photos: '', facilities: '' });
-      setMessage('Stadium added successfully.');
-      loadOwnerData();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
-  const handleCreateSlot = async (e) => {
-    e.preventDefault();
-    try {
-      await authFetch('/stadiums/slots', {
-        method: 'POST',
-        body: JSON.stringify({ ...slotForm, stadiumId: selectedStadium })
+      setStadiumForm({
+        name: '',
+        description: '',
+        location: '',
+        photos: '',
+        facilities: ''
       });
-      setSlotForm({ date: '', startTime: '', endTime: '' });
-      setMessage('Slot added successfully.');
-      loadSlots();
+
+      setShowModal(false);
+      setMessage('Stadium added successfully.');
       loadOwnerData();
     } catch (err) {
       setError(err.message);
@@ -92,59 +99,154 @@ function OwnerDashboard() {
 
   return (
     <div>
-      <h2>Owner Dashboard</h2>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2 className="mb-0">Owner Dashboard</h2>
+        <button className="btn btn-success" onClick={() => setShowModal(true)}>
+          Add Stadium
+        </button>
+      </div>
+
       {error && <div className="alert alert-danger">{error}</div>}
       {message && <div className="alert alert-success">{message}</div>}
 
       {stats && (
         <div className="row g-3 mb-4">
-          <div className="col-md-3"><div className="stat-card">Stadiums <strong>{stats.totalStadiums}</strong></div></div>
-          <div className="col-md-3"><div className="stat-card">Total Slots <strong>{stats.totalSlots}</strong></div></div>
-          <div className="col-md-3"><div className="stat-card">Reserved <strong>{stats.reservedSlots}</strong></div></div>
-          <div className="col-md-3"><div className="stat-card">Available <strong>{stats.availableSlots}</strong></div></div>
+          <div className="col-md-3">
+            <div className="stat-card">
+              Stadiums <strong>{stats.totalStadiums}</strong>
+            </div>
+          </div>
+
+          <div className="col-md-3">
+            <div className="stat-card">
+              Total Slots <strong>{stats.totalSlots}</strong>
+            </div>
+          </div>
+
+          <div className="col-md-3">
+            <div className="stat-card">
+              Reserved <strong>{stats.reservedSlots}</strong>
+            </div>
+          </div>
+
+          <div className="col-md-3">
+            <div className="stat-card">
+              Available <strong>{stats.availableSlots}</strong>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="row g-4">
-        <div className="col-md-6">
-          <div className="card card-body shadow-sm">
-            <h4>Add New Stadium</h4>
-            <form onSubmit={handleCreateStadium}>
-              <input className="form-control mb-2" name="name" placeholder="Stadium name" value={stadiumForm.name} onChange={handleStadiumChange} required />
-              <input className="form-control mb-2" name="location" placeholder="Location" value={stadiumForm.location} onChange={handleStadiumChange} required />
-              <textarea className="form-control mb-2" name="description" placeholder="Description" value={stadiumForm.description} onChange={handleStadiumChange} required />
-              <input className="form-control mb-2" name="photos" placeholder="Photo URLs separated by commas" value={stadiumForm.photos} onChange={handleStadiumChange} />
-              <input className="form-control mb-2" name="facilities" placeholder="Facilities separated by commas" value={stadiumForm.facilities} onChange={handleStadiumChange} />
-              <button className="btn btn-success" type="submit">Add Stadium</button>
-            </form>
-          </div>
-        </div>
+      <h4 className="mb-3">Your Stadiums</h4>
 
-        <div className="col-md-6">
-          <div className="card card-body shadow-sm">
-            <h4>Add Reservation Slot</h4>
-            <form onSubmit={handleCreateSlot}>
-              <select className="form-select mb-2" value={selectedStadium} onChange={(e) => setSelectedStadium(e.target.value)} required>
-                <option value="">Choose stadium</option>
-                {stadiums.map((stadium) => <option key={stadium._id} value={stadium._id}>{stadium.name}</option>)}
-              </select>
-              <input type="date" className="form-control mb-2" name="date" value={slotForm.date} onChange={handleSlotChange} required />
-              <input type="time" className="form-control mb-2" name="startTime" value={slotForm.startTime} onChange={handleSlotChange} required />
-              <input type="time" className="form-control mb-2" name="endTime" value={slotForm.endTime} onChange={handleSlotChange} required />
-              <button className="btn btn-success" type="submit">Add Slot</button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <h3 className="mt-5">Current Reservation Status</h3>
       <div className="row g-3">
-        {slots.map((slot) => (
-          <div className="col-md-3" key={slot._id}>
-            <SlotBadge slot={slot} />
+        {stadiums.map((stadium) => (
+          <div className="col-md-6 col-lg-4" key={stadium._id}>
+            <Link
+              to={`/owner/stadiums/${stadium._id}`}
+              className="text-decoration-none"
+            >
+              <div className="card h-100 shadow-sm owner-stadium-card">
+                <div className="card-body">
+                  <h5 className="card-title text-success">{stadium.name}</h5>
+
+                  <p className="card-text mb-1">
+                    <strong>Location:</strong> {stadium.location}
+                  </p>
+
+                  <p className="card-text text-muted stadium-preview">
+                    {stadium.description}
+                  </p>
+
+                  <div className="small">
+                    <span className="badge bg-success me-2">
+                      Slots: {slotCounts[stadium._id]?.total ?? 0}
+                    </span>
+
+                    <span className="badge bg-light text-success border">
+                      Available: {slotCounts[stadium._id]?.available ?? 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
           </div>
         ))}
       </div>
+
+      {stadiums.length === 0 && (
+        <p className="text-muted">
+          No stadiums yet. Click “Add Stadium” to create your first one.
+        </p>
+      )}
+
+      {showModal && (
+        <div className="modal-backdrop-custom">
+          <div className="modal-panel card shadow-lg">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4 className="mb-0">Add New Stadium</h4>
+
+                <button
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateStadium}>
+                <input
+                  className="form-control mb-2"
+                  name="name"
+                  placeholder="Stadium name"
+                  value={stadiumForm.name}
+                  onChange={handleStadiumChange}
+                  required
+                />
+
+                <input
+                  className="form-control mb-2"
+                  name="location"
+                  placeholder="Location"
+                  value={stadiumForm.location}
+                  onChange={handleStadiumChange}
+                  required
+                />
+
+                <textarea
+                  className="form-control mb-2"
+                  name="description"
+                  placeholder="Description"
+                  value={stadiumForm.description}
+                  onChange={handleStadiumChange}
+                  required
+                />
+
+                <input
+                  className="form-control mb-2"
+                  name="photos"
+                  placeholder="Photo URLs separated by commas"
+                  value={stadiumForm.photos}
+                  onChange={handleStadiumChange}
+                />
+
+                <input
+                  className="form-control mb-3"
+                  name="facilities"
+                  placeholder="Facilities separated by commas"
+                  value={stadiumForm.facilities}
+                  onChange={handleStadiumChange}
+                />
+
+                <button className="btn btn-success" type="submit">
+                  Save Stadium
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
