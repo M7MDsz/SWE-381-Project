@@ -35,7 +35,39 @@ body {
 .slot-available {
   background: #198754;
 }
+.owner-stadium-card {
+  border: 1px solid #dfeee3;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
 
+.owner-stadium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(25, 135, 84, 0.15);
+}
+
+.stadium-preview {
+  min-height: 48px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 560px;
+}
 .slot-reserved {
   background: #dc3545;
 }
