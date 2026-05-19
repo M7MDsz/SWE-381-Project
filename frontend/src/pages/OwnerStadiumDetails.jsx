@@ -15,6 +15,8 @@ function OwnerStadiumDetails() {
   const [slotForm, setSlotForm] = useState({ date: '', startTime: '', endTime: '' });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [deletingSlotId, setDeletingSlotId] = useState('');
 
   const sortSlots = (items) => {
     return [...items].sort((a, b) => {
@@ -25,6 +27,7 @@ function OwnerStadiumDetails() {
   };
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const stadiumResponse = await fetch(`${API_URL}/stadiums/${stadiumId}`);
       const stadiumData = await stadiumResponse.json();
@@ -35,8 +38,11 @@ function OwnerStadiumDetails() {
       const slotData = await slotResponse.json();
       if (!slotResponse.ok) throw new Error(slotData.message || 'Could not load slots');
       setSlots(sortSlots(slotData));
+      setError('');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,7 +71,29 @@ function OwnerStadiumDetails() {
     }
   };
 
+  const handleDeleteSlot = async (slot) => {
+    if (slot.isReserved) {
+      setError('Reserved slots cannot be deleted.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete slot on ${slot.date} (${slot.startTime} - ${slot.endTime})?`);
+    if (!confirmed) return;
+
+    setDeletingSlotId(slot._id);
+    try {
+      await authFetch(`/stadiums/slots/${slot._id}`, { method: 'DELETE' });
+      setMessage('Slot deleted successfully.');
+      loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingSlotId('');
+    }
+  };
+
   if (error) return <div className="alert alert-danger">{error}</div>;
+  if (loading) return <div className="alert alert-light border">Loading stadium details...</div>;
   if (!stadium) return <p>Loading...</p>;
 
   return (
@@ -93,8 +121,25 @@ function OwnerStadiumDetails() {
       <h4>Reservation Slots</h4>
       <div className="row g-3">
         {slots.map((slot) => (
-          <div className="col-md-3" key={slot._id}>
-            <SlotBadge slot={slot} />
+          <div className="col-md-4 col-lg-3" key={slot._id}>
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-body pb-2">
+                <SlotBadge slot={slot} />
+              </div>
+              <div className="card-footer bg-transparent border-0 pt-0">
+                {slot.isReserved ? (
+                  <button className="btn btn-outline-secondary btn-sm w-100" disabled title="Reserved slots cannot be deleted.">Reserved slots cannot be deleted.</button>
+                ) : (
+                  <button
+                    className="btn btn-outline-danger btn-sm w-100"
+                    disabled={deletingSlotId === slot._id}
+                    onClick={() => handleDeleteSlot(slot)}
+                  >
+                    {deletingSlotId === slot._id ? 'Deleting...' : '🗑 Delete Available Slot'}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         ))}
       </div>
