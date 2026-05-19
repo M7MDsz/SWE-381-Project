@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import StadiumCard from '../components/StadiumCard';
 import heroStadium from '../assets/hero-stadium.svg';
