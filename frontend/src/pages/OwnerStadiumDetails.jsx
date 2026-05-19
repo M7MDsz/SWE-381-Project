@@ -72,18 +72,17 @@ function OwnerStadiumDetails() {
   };
 
   const handleDeleteSlot = async (slot) => {
-    if (slot.isReserved) {
-      setError('Reserved slots cannot be deleted.');
-      return;
-    }
-
-    const confirmed = window.confirm(`Delete slot on ${slot.date} (${slot.startTime} - ${slot.endTime})?`);
+    const confirmed = window.confirm(
+      slot.isReserved
+        ? `Cancel reservation for slot on ${slot.date} (${slot.startTime} - ${slot.endTime}) and make it available again?`
+        : `Delete available slot on ${slot.date} (${slot.startTime} - ${slot.endTime})?`
+    );
     if (!confirmed) return;
 
     setDeletingSlotId(slot._id);
     try {
       await authFetch(`/stadiums/slots/${slot._id}`, { method: 'DELETE' });
-      setMessage('Slot deleted successfully.');
+      setMessage(slot.isReserved ? 'Reservation cancelled successfully.' : 'Available slot deleted successfully.');
       loadData();
     } catch (err) {
       setError(err.message);
@@ -127,17 +126,17 @@ function OwnerStadiumDetails() {
                 <SlotBadge slot={slot} />
               </div>
               <div className="card-footer bg-transparent border-0 pt-0">
-                {slot.isReserved ? (
-                  <button className="btn btn-outline-secondary btn-sm w-100" disabled title="Reserved slots cannot be deleted.">Reserved slots cannot be deleted.</button>
-                ) : (
-                  <button
-                    className="btn btn-outline-danger btn-sm w-100"
-                    disabled={deletingSlotId === slot._id}
-                    onClick={() => handleDeleteSlot(slot)}
-                  >
-                    {deletingSlotId === slot._id ? 'Deleting...' : '🗑 Delete Available Slot'}
-                  </button>
-                )}
+                <button
+                  className={`btn btn-sm w-100 ${slot.isReserved ? 'btn-outline-warning' : 'btn-outline-danger'}`}
+                  disabled={deletingSlotId === slot._id}
+                  onClick={() => handleDeleteSlot(slot)}
+                >
+                  {deletingSlotId === slot._id
+                    ? 'Processing...'
+                    : slot.isReserved
+                      ? '⚠ Cancel Reservation'
+                      : '🗑 Delete Available Slot'}
+                </button>
               </div>
             </div>
           </div>

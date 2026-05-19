@@ -146,14 +146,25 @@ const deleteSlot = async (req, res, next) => {
     }
 
     if (slot.isReserved) {
-      res.status(400);
-      throw new Error('Reserved slots cannot be deleted.');
+      const activeReservation = await Reservation.findOne({ slot: slot._id, status: 'active' });
+      if (!activeReservation) {
+        res.status(400);
+        throw new Error('Reserved slot has no active reservation to cancel.');
+      }
+
+      activeReservation.status = 'cancelled';
+      await activeReservation.save();
+      slot.isReserved = false;
+      await slot.save();
+
+      res.json({ message: 'Reservation cancelled and slot is available again.' });
+      return;
     }
 
     await Reservation.deleteMany({ slot: slot._id });
     await Slot.findByIdAndDelete(slot._id);
 
-    res.json({ message: 'Slot deleted successfully.' });
+    res.json({ message: 'Available slot deleted successfully.' });
   } catch (error) {
     next(error);
   }
