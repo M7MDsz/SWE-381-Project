@@ -317,3 +317,41 @@ body {
     gap: 6px 12px;
   }
 }
+
+.pie-chart-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.pie-chart {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 8px solid #f3faf5;
+  box-shadow: inset 0 0 0 14px white;
+}
+
+.chart-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: #e8f3ec;
+  border-radius: 999px;
+}
+
+.chart-bar {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.chart-bar-danger {
+  background: #dc3545;
+}
+
+.chart-bar-success {
+  background: #198754;
+}
+
+.occupancy-table th {
+  color: #198754;
+}

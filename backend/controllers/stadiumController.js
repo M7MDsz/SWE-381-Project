@@ -215,6 +215,24 @@ const getOwnerStats = async (req, res, next) => {
       createdAt: slot.createdAt
     }));
 
+
+    const perStadiumStats = stadiums.map((stadium) => {
+      const stadiumSlots = ownerSlots.filter((slot) => slot.stadium.toString() === stadium._id.toString());
+      const slotsCount = stadiumSlots.length;
+      const reservedCount = stadiumSlots.filter((slot) => slot.isReserved).length;
+      const availableCount = slotsCount - reservedCount;
+      const occupancy = slotsCount > 0 ? Number(((reservedCount / slotsCount) * 100).toFixed(0)) : 0;
+
+      return {
+        stadiumId: stadium._id,
+        stadiumName: stadium.name,
+        slots: slotsCount,
+        reserved: reservedCount,
+        available: availableCount,
+        occupancy
+      };
+    }).sort((a, b) => b.occupancy - a.occupancy);
+
     res.json({
       totalStadiums: stadiums.length,
       totalSlots,
@@ -227,6 +245,7 @@ const getOwnerStats = async (req, res, next) => {
       stadiumWithMostReservations,
       recentStadiums,
       recentSlots,
+      perStadiumStats,
       stadiumIds
     });
   } catch (error) {

@@ -101,6 +101,14 @@ function OwnerDashboard() {
     }
   };
 
+
+  const maxReservations = stats && stats.perStadiumStats && stats.perStadiumStats.length > 0
+    ? Math.max(...stats.perStadiumStats.map((row) => row.reserved), 1)
+    : 1;
+  const maxAvailable = stats && stats.perStadiumStats && stats.perStadiumStats.length > 0
+    ? Math.max(...stats.perStadiumStats.map((row) => row.available), 1)
+    : 1;
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -126,6 +134,87 @@ function OwnerDashboard() {
             <div className="col-md-3"><div className="stat-card">📉 Available % <strong>{stats.availablePercentage}%</strong></div></div>
             <div className="col-md-3"><div className="stat-card">🥇 Most Free <strong>{stats.stadiumWithMostAvailableSlots ? stats.stadiumWithMostAvailableSlots.name : 'N/A'}</strong></div></div>
             <div className="col-md-3"><div className="stat-card">🔥 Most Reserved <strong>{stats.stadiumWithMostReservations ? stats.stadiumWithMostReservations.name : 'N/A'}</strong></div></div>
+          </div>
+
+
+          <div className="row g-3 mb-4">
+            <div className="col-lg-4">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body">
+                  <h5 className="text-success">Slots Distribution</h5>
+                  <div className="pie-chart-wrap">
+                    <div
+                      className="pie-chart"
+                      style={{ background: `conic-gradient(#dc3545 0% ${stats.reservedPercentage}%, #198754 ${stats.reservedPercentage}% 100%)` }}
+                    />
+                  </div>
+                  <div className="d-flex justify-content-between small mt-3">
+                    <span><span className="legend red"></span> Reserved {stats.reservedPercentage}%</span>
+                    <span><span className="legend green"></span> Available {stats.availablePercentage}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-lg-4">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body">
+                  <h5 className="text-success">Reservations per Stadium</h5>
+                  {stats.perStadiumStats && stats.perStadiumStats.map((row) => (
+                    <div className="mb-2" key={`res-${row.stadiumId}`}>
+                      <div className="d-flex justify-content-between small"><span>{row.stadiumName}</span><strong>{row.reserved}</strong></div>
+                      <div className="chart-bar-bg">
+                        <div className="chart-bar chart-bar-danger" style={{ width: `${(row.reserved / maxReservations) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-lg-4">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body">
+                  <h5 className="text-success">Available Slots per Stadium</h5>
+                  {stats.perStadiumStats && stats.perStadiumStats.map((row) => (
+                    <div className="mb-2" key={`avail-${row.stadiumId}`}>
+                      <div className="d-flex justify-content-between small"><span>{row.stadiumName}</span><strong>{row.available}</strong></div>
+                      <div className="chart-bar-bg">
+                        <div className="chart-bar chart-bar-success" style={{ width: `${(row.available / maxAvailable) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body">
+              <h5 className="text-success">Occupancy Table</h5>
+              <div className="table-responsive">
+                <table className="table align-middle occupancy-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Stadium</th>
+                      <th>Slots</th>
+                      <th>Reserved</th>
+                      <th>Occupancy</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.perStadiumStats && stats.perStadiumStats.map((row) => (
+                      <tr key={`occ-${row.stadiumId}`}>
+                        <td>{row.stadiumName}</td>
+                        <td>{row.slots}</td>
+                        <td>{row.reserved}</td>
+                        <td>{row.occupancy}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="row g-3 mb-4">

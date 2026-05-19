@@ -6,6 +6,6 @@ const { requireFields } = require('../middleware/validationMiddleware');
 const router = express.Router();
 
 router.get('/', protect, getMessages);
-router.post('/', protect, requireFields(['receiver', 'text']), sendMessage);
+router.post('/', protect, requireFields(['text']), sendMessage);
 
 module.exports = router;

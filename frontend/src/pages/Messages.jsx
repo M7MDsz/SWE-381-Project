@@ -1,11 +1,16 @@
-import React from 'react';
 import { useContext, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 function Messages() {
-  const { authFetch } = useContext(AuthContext);
+  const { authFetch, user } = useContext(AuthContext);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const defaultStadiumId = params.get('stadiumId') || '';
+  const defaultOwnerName = params.get('ownerName') || '';
+
   const [messages, setMessages] = useState([]);
-  const [formData, setFormData] = useState({ receiver: '', text: '', stadium: '' });
+  const [formData, setFormData] = useState({ text: '', stadium: defaultStadiumId, receiver: '' });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -29,11 +34,17 @@ function Messages() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        text: formData.text,
+        stadium: formData.stadium || undefined,
+        receiver: user.role === 'owner' ? formData.receiver : undefined
+      };
+
       await authFetch('/messages', {
         method: 'POST',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
-      setFormData({ receiver: '', text: '', stadium: '' });
+      setFormData({ ...formData, text: '' });
       setNotice('Message sent.');
       loadMessages();
     } catch (err) {
@@ -44,7 +55,11 @@ function Messages() {
   return (
     <div>
       <h2>Messages</h2>
-      <p className="text-muted">Enter the receiver user ID to send a message. Receiver IDs appear in reservation records returned by the API.</p>
+      {user.role === 'user' ? (
+        <p className="text-muted">Send your message directly to the stadium owner{defaultOwnerName ? ` (${defaultOwnerName})` : ''}.</p>
+      ) : (
+        <p className="text-muted">As owner, you can still send direct messages with receiver ID when needed.</p>
+      )}
       {error && <div className="alert alert-danger">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
 
@@ -53,9 +68,10 @@ function Messages() {
           <div className="card card-body shadow-sm">
             <h4>Send Message</h4>
             <form onSubmit={handleSubmit}>
-              <input className="form-control mb-2" name="receiver" placeholder="Receiver user ID" value={formData.receiver} onChange={handleChange} required />
-              <input className="form-control mb-2" name="stadium" placeholder="Stadium ID optional" value={formData.stadium} onChange={handleChange} />
-              <textarea className="form-control mb-2" name="text" placeholder="Message" value={formData.text} onChange={handleChange} required />
+              {user.role === 'owner' && (
+                <input className="form-control mb-2" name="receiver" placeholder="Receiver user ID" value={formData.receiver} onChange={handleChange} required />
+              )}
+              <textarea className="form-control mb-2" name="text" placeholder="Write your message" value={formData.text} onChange={handleChange} required rows="5" />
               <button className="btn btn-success" type="submit">Send</button>
             </form>
           </div>

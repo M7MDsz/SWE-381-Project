@@ -69,7 +69,7 @@ function StadiumDetails() {
           </ul>
           <p>Owner: {stadium.owner && stadium.owner.name}</p>
           {user && stadium.owner && user._id !== stadium.owner._id && (
-            <Link className="btn btn-outline-success" to="/messages">Message owner</Link>
+            <Link className="btn btn-outline-success" to={`/messages?stadiumId=${stadium._id}&ownerName=${encodeURIComponent(stadium.owner.name)}`}>Message owner</Link>
           )}
         </div>
         <div className="col-md-5">
